@@ -42,3 +42,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 *.apk
+# Allow release APKs in root
+!quran-app-arm64-v2.apk
+!quran-app-arm32-v2.apk
