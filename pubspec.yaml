@@ -1,0 +1,28 @@
+name: quran_app
+description: "A beautiful Mushaf-style Quran app with full Arabic text, translations, and bookmarks."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  shared_preferences: ^2.3.2
+  provider: ^6.1.2
+  scrollable_positioned_list: ^0.3.8
+  google_fonts: ^6.3.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/data/
