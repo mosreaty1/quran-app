@@ -1,8 +1,8 @@
 name: quran_app
-description: "A beautiful Mushaf-style Quran app with full Arabic text, translations, and bookmarks."
+description: "A beautiful Mushaf-style Quran app with authentic Arabic text, translations, and Firebase sync."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 2.0.0+2
 
 environment:
   sdk: ^3.5.4
@@ -15,6 +15,12 @@ dependencies:
   provider: ^6.1.2
   scrollable_positioned_list: ^0.3.8
   google_fonts: ^6.3.0
+  # Firebase
+  firebase_core: ^3.6.0
+  cloud_firestore: ^5.4.4
+  firebase_auth: ^5.3.1
+  # Quran text package (full 6236 ayahs in Arabic)
+  quran: ^1.3.1
 
 dev_dependencies:
   flutter_test:
@@ -26,3 +32,5 @@ flutter:
 
   assets:
     - assets/data/
+    - assets/fonts/
+    - assets/images/

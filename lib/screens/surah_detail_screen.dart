@@ -1,220 +1,348 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../providers/quran_provider.dart';
 import '../data/quran_data.dart';
-import '../models/ayah.dart';
-import '../widgets/ayah_card.dart';
+import '../themes/app_theme.dart';
 
 class SurahDetailScreen extends StatelessWidget {
   final int surahNumber;
-
   const SurahDetailScreen({super.key, required this.surahNumber});
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<QuranProvider>();
+    final isDark = provider.nightMode;
     final surah = QuranData.getSurahByNumber(surahNumber);
     final ayahs = provider.getAyahsForSurah(surahNumber);
-    final isDark = provider.nightMode;
-    final bgColor = isDark ? const Color(0xFF1A1A1A) : const Color(0xFFFDF6E3);
-    final accentColor = isDark ? const Color(0xFF4CAF50) : const Color(0xFF1B5E20);
+    final bg = isDark ? MushafColors.nightBg : MushafColors.parchment;
+    final textColor = isDark ? MushafColors.nightText : MushafColors.inkDark;
 
     return Scaffold(
-      backgroundColor: bgColor,
-      appBar: AppBar(
-        backgroundColor: isDark ? const Color(0xFF2D2D2D) : accentColor,
-        foregroundColor: Colors.white,
-        title: Column(
-          children: [
-            Text(
-              surah.name,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+      backgroundColor: bg,
+      body: CustomScrollView(
+        slivers: [
+          // ── Collapsing header ──────────────────────────────────────────────
+          SliverAppBar(
+            expandedHeight: 220,
+            pinned: true,
+            backgroundColor:
+                isDark ? MushafColors.nightSurface : MushafColors.green,
+            foregroundColor: Colors.white,
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: isDark
+                        ? [const Color(0xFF0D2A0D), const Color(0xFF1A3A1A)]
+                        : [MushafColors.green, MushafColors.greenLight],
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    // Subtle pattern
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _PatternPainter(),
+                      ),
+                    ),
+                    // Content
+                    SafeArea(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 40),
+                          // Gold outer ring
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: MushafColors.gold, width: 2),
+                              color: Colors.white.withOpacity(0.08),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${surahNumber}',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            surah.name,
+                            style: GoogleFonts.amiri(
+                              fontSize: 32,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textDirection: TextDirection.rtl,
+                          ),
+                          Text(
+                            surah.nameEnglish,
+                            style: const TextStyle(
+                                color: Colors.white70, fontSize: 14),
+                          ),
+                          const SizedBox(height: 10),
+                          // Info chips
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              _chip(surah.revelationType,
+                                  Icons.location_on_outlined),
+                              _chip('${surah.ayahCount} آية', Icons.format_list_numbered),
+                              _chip('Page ${surah.startPage}', Icons.book_outlined),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            Text(
-              '${surah.nameEnglish} • ${surah.ayahCount} verses',
-              style: const TextStyle(fontSize: 12, color: Colors.white70),
-            ),
-          ],
-        ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: Icon(provider.showTranslation
-                ? Icons.translate
-                : Icons.translate_outlined),
-            onPressed: () => provider.toggleTranslation(),
+            actions: [
+              IconButton(
+                icon: Icon(
+                  isDark ? Icons.wb_sunny_outlined : Icons.nightlight_outlined,
+                  color: Colors.white70,
+                ),
+                onPressed: provider.toggleNightMode,
+              ),
+            ],
           ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Surah header
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDark
-                    ? [const Color(0xFF2D4A2D), const Color(0xFF1A2E1A)]
-                    : [const Color(0xFF1B5E20), const Color(0xFF2E7D32)],
-              ),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  surah.name,
-                  style: const TextStyle(
-                    fontSize: 36,
-                    color: Colors.white,
+
+          // ── Basmala ───────────────────────────────────────────────────────
+          if (surahNumber != 9)
+            SliverToBoxAdapter(
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(12, 16, 12, 0),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? MushafColors.nightSurface
+                      : Colors.white,
+                  border: Border.all(color: MushafColors.gold, width: 1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ',
+                  style: GoogleFonts.amiri(
+                    fontSize: 26,
+                    color: isDark ? MushafColors.gold : MushafColors.green,
                     fontWeight: FontWeight.bold,
                   ),
                   textDirection: TextDirection.rtl,
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  '${surah.nameEnglish} — ${surah.nameMeaning}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _InfoChip(label: surah.revelationType, isDark: isDark),
-                    const SizedBox(width: 8),
-                    _InfoChip(label: '${surah.ayahCount} Verses', isDark: isDark),
-                    const SizedBox(width: 8),
-                    _InfoChip(label: 'Page ${surah.startPage}', isDark: isDark),
-                  ],
-                ),
-                // Basmala (except for At-Tawbah, surah 9)
-                if (surahNumber != 9) ...[
-                  const SizedBox(height: 16),
-                  const Text(
-                    'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ',
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
+              ),
+            ),
+
+          // ── Verses ────────────────────────────────────────────────────────
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final ayah = ayahs[index];
+                final bookmarked = provider.isBookmarked(
+                    ayah.surahNumber, ayah.ayahNumber);
+
+                return GestureDetector(
+                  onLongPress: () {
+                    HapticFeedback.mediumImpact();
+                    if (bookmarked) {
+                      provider.removeBookmark(
+                          ayah.surahNumber, ayah.ayahNumber);
+                    } else {
+                      provider.addBookmark(
+                          ayah.surahNumber, ayah.ayahNumber);
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(bookmarked
+                            ? 'تم إزالة العلامة'
+                            : 'تم حفظ الآية'),
+                        duration: const Duration(seconds: 1),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 3),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: bookmarked
+                          ? MushafColors.gold.withOpacity(0.1)
+                          : (isDark
+                              ? MushafColors.nightSurface
+                              : Colors.white),
+                      border: Border.all(
+                        color: bookmarked
+                            ? MushafColors.gold
+                            : (isDark
+                                ? MushafColors.nightBorder
+                                : MushafColors.goldLight.withOpacity(0.3)),
+                        width: bookmarked ? 1.5 : 0.8,
+                      ),
+                      borderRadius: BorderRadius.circular(6),
                     ),
-                    textDirection: TextDirection.rtl,
-                    textAlign: TextAlign.center,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Arabic text
+                        Directionality(
+                          textDirection: TextDirection.rtl,
+                          child: Text.rich(
+                            TextSpan(children: [
+                              TextSpan(
+                                text: '${ayah.text} ',
+                                style: GoogleFonts.amiri(
+                                  fontSize: provider.fontSize,
+                                  color: textColor,
+                                  height: 2.0,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              WidgetSpan(
+                                alignment: PlaceholderAlignment.middle,
+                                child: Container(
+                                  width: 30,
+                                  height: 30,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: MushafColors.gold,
+                                        width: 1.5),
+                                    color: MushafColors.gold.withOpacity(0.1),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '${ayah.ayahNumber}',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: MushafColors.gold,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ]),
+                            textAlign: TextAlign.justify,
+                          ),
+                        ),
+                        // Translation
+                        if (provider.showTranslation &&
+                            ayah.translation.isNotEmpty) ...[
+                          const Divider(height: 12, thickness: 0.5),
+                          Text(
+                            '${ayah.ayahNumber}. ${ayah.translation}',
+                            style: GoogleFonts.notoSans(
+                              fontSize: provider.fontSize * 0.48,
+                              color: textColor.withOpacity(0.65),
+                              height: 1.5,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                        // Actions row
+                        const SizedBox(height: 6),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            InkWell(
+                              onTap: () {
+                                Clipboard.setData(
+                                    ClipboardData(text: ayah.text));
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('تم نسخ الآية'),
+                                      duration: Duration(seconds: 1)),
+                                );
+                              },
+                              child: Icon(Icons.copy_outlined,
+                                  size: 16,
+                                  color: textColor.withOpacity(0.4)),
+                            ),
+                            const SizedBox(width: 12),
+                            InkWell(
+                              onTap: () {
+                                if (bookmarked) {
+                                  provider.removeBookmark(
+                                      ayah.surahNumber, ayah.ayahNumber);
+                                } else {
+                                  provider.addBookmark(
+                                      ayah.surahNumber, ayah.ayahNumber);
+                                }
+                              },
+                              child: Icon(
+                                bookmarked
+                                    ? Icons.bookmark
+                                    : Icons.bookmark_outline,
+                                size: 16,
+                                color: bookmarked
+                                    ? MushafColors.gold
+                                    : textColor.withOpacity(0.4),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ],
-              ],
+                );
+              },
+              childCount: ayahs.length,
             ),
           ),
-          // Ayahs
-          Expanded(
-            child: ayahs.isEmpty
-                ? _EmptyAyahsView(surah: surah, isDark: isDark)
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: ayahs.length,
-                    itemBuilder: (context, index) {
-                      final ayah = ayahs[index];
-                      return AyahCard(
-                        ayah: ayah,
-                        showTranslation: provider.showTranslation,
-                        isBookmarked: provider.isBookmarked(ayah.surahNumber, ayah.ayahNumber),
-                        isDark: isDark,
-                        fontSize: provider.fontSize,
-                        onBookmark: () {
-                          if (provider.isBookmarked(ayah.surahNumber, ayah.ayahNumber)) {
-                            provider.removeBookmark(ayah.surahNumber, ayah.ayahNumber);
-                          } else {
-                            provider.addBookmark(ayah.surahNumber, ayah.ayahNumber);
-                          }
-                        },
-                        onCopy: () {
-                          Clipboard.setData(ClipboardData(text: ayah.text));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Ayah copied to clipboard')),
-                          );
-                        },
-                      );
-                    },
-                  ),
-          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
+        ],
+      ),
+    );
+  }
+
+  Widget _chip(String label, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.white24,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white30),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white70, size: 12),
+          const SizedBox(width: 4),
+          Text(label,
+              style: const TextStyle(color: Colors.white70, fontSize: 11)),
         ],
       ),
     );
   }
 }
 
-class _InfoChip extends StatelessWidget {
-  final String label;
-  final bool isDark;
-
-  const _InfoChip({required this.label, required this.isDark});
+class _PatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()
+      ..color = Colors.white.withOpacity(0.04)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
+    for (double x = 0; x < size.width; x += 40) {
+      for (double y = 0; y < size.height; y += 40) {
+        canvas.drawCircle(Offset(x, y), 14, p);
+      }
+    }
+  }
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(color: Colors.white, fontSize: 12),
-      ),
-    );
-  }
-}
-
-class _EmptyAyahsView extends StatelessWidget {
-  final dynamic surah;
-  final bool isDark;
-
-  const _EmptyAyahsView({required this.surah, required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.menu_book_outlined,
-                size: 64,
-                color: isDark ? Colors.white30 : Colors.black26),
-            const SizedBox(height: 16),
-            Text(
-              surah.name,
-              style: TextStyle(
-                fontSize: 32,
-                color: isDark ? const Color(0xFF4CAF50) : const Color(0xFF1B5E20),
-                fontWeight: FontWeight.bold,
-              ),
-              textDirection: TextDirection.rtl,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${surah.ayahCount} verses — ${surah.revelationType}',
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark ? Colors.white54 : Colors.black54,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Full text for this surah\nwill be available in the complete version.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: isDark ? Colors.white38 : Colors.black38,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  bool shouldRepaint(_) => false;
 }
